@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://clinic-database-web-application.onrender.com/api'
+// Use hardcoded URL since environment variable isn't working
+const API_BASE_URL = 'https://clinic-database-web-application.onrender.com/api'
 
 // Create axios instance with default config
 const api = axios.create({
@@ -31,7 +32,7 @@ api.interceptors.response.use(
   }
 )
 
-// *** ADD MISSING AUTH API ***
+// Auth API
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
