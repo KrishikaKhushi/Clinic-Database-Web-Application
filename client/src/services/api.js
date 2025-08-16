@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'https://clinic-database-web-application.onrender.com/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://clinic-database-web-application.onrender.com/api'
 
 // Create axios instance with default config
 const api = axios.create({
@@ -31,6 +31,13 @@ api.interceptors.response.use(
   }
 )
 
+// *** ADD MISSING AUTH API ***
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (userData) => api.post('/auth/register', userData),
+  getProfile: () => api.get('/auth/profile'),
+}
+
 // Patients API
 export const patientsAPI = {
   // Get all patients with optional filters
@@ -49,7 +56,7 @@ export const patientsAPI = {
   delete: (id) => api.delete(`/patients/${id}`),
 }
 
-// Doctors API (we'll add this later)
+// Doctors API
 export const doctorsAPI = {
   getAll: (params = {}) => api.get('/doctors', { params }),
   getById: (id) => api.get(`/doctors/${id}`),
@@ -58,7 +65,7 @@ export const doctorsAPI = {
   delete: (id) => api.delete(`/doctors/${id}`),
 }
 
-// Appointments API (we'll add this later)
+// Appointments API
 export const appointmentsAPI = {
   getAll: (params = {}) => api.get('/appointments', { params }),
   getById: (id) => api.get(`/appointments/${id}`),
@@ -67,7 +74,7 @@ export const appointmentsAPI = {
   delete: (id) => api.delete(`/appointments/${id}`),
 }
 
-// Medical Records API (we'll add this later)
+// Medical Records API
 export const recordsAPI = {
   getAll: (params = {}) => api.get('/records', { params }),
   getById: (id) => api.get(`/records/${id}`),
