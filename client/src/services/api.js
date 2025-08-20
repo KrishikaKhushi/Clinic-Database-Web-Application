@@ -1,7 +1,14 @@
 import axios from 'axios'
 
-// Use hardcoded URL since environment variable isn't working
-const API_BASE_URL = 'https://clinic-database-web-application.onrender.com/api'
+// Environment variable handling for different build tools
+const API_BASE_URL = 
+  process.env.REACT_APP_API_URL || 
+  process.env.VITE_API_URL || 
+  process.env.NEXT_PUBLIC_API_URL || 
+  'https://clinic-database-web-application.onrender.com/api'
+
+// Debug log to see what URL is being used
+console.log('🔗 API Base URL:', API_BASE_URL)
 
 // Create axios instance with default config
 const api = axios.create({
@@ -9,21 +16,41 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout for Render cold starts
 })
 
 // Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Handle auth errors
-api.interceptors.response.use(
-  (response) => response,
+api.interceptors.request.use(
+  (config) => {
+    console.log(`🚀 Making request to: ${config.baseURL}${config.url}`)
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
   (error) => {
+    console.error('❌ Request interceptor error:', error)
+    return Promise.reject(error)
+  }
+)
+
+// Handle auth errors and response logging
+api.interceptors.response.use(
+  (response) => {
+    console.log(`✅ Response from ${response.config.url}:`, response.status)
+    return response
+  },
+  (error) => {
+    console.error('❌ API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      message: error.message,
+      data: error.response?.data
+    })
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
@@ -34,7 +61,10 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
+  login: (credentials) => {
+    console.log('🔐 Attempting login...')
+    return api.post('/auth/login', credentials)
+  },
   register: (userData) => api.post('/auth/register', userData),
   getProfile: () => api.get('/auth/profile'),
 }
