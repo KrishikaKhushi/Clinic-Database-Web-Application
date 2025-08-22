@@ -4,6 +4,29 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// IMPORTANT: Specific routes MUST come BEFORE parameterized routes
+// Move '/patient/:patientId' route BEFORE '/:id' route
+
+// @route   GET /api/records/patient/:patientId
+// @desc    Get patient's medical history
+// @access  Private
+router.get('/patient/:patientId', auth, async (req, res) => {
+  try {
+    const records = await MedicalRecord.find({ patient: req.params.patientId })
+      .populate('doctor', 'doctorId personalInfo professionalInfo')
+      .populate('appointment', 'appointmentId appointmentDate appointmentTime')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      records,
+      count: records.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/records
 // @desc    Get all medical records
 // @access  Private
@@ -48,6 +71,7 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/records/:id
 // @desc    Get medical record by ID
 // @access  Private
+// IMPORTANT: This parameterized route comes AFTER specific routes
 router.get('/:id', auth, async (req, res) => {
   try {
     const record = await MedicalRecord.findById(req.params.id)
@@ -132,26 +156,6 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({
       success: true,
       message: 'Medical record deleted successfully'
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// @route   GET /api/records/patient/:patientId
-// @desc    Get patient's medical history
-// @access  Private
-router.get('/patient/:patientId', auth, async (req, res) => {
-  try {
-    const records = await MedicalRecord.find({ patient: req.params.patientId })
-      .populate('doctor', 'doctorId personalInfo professionalInfo')
-      .populate('appointment', 'appointmentId appointmentDate appointmentTime')
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      records,
-      count: records.length
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

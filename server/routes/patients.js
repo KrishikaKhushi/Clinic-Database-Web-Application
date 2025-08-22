@@ -1,7 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const Patient = require('../models/Patient');
-const { auth, authorize } = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -15,16 +14,32 @@ router.get('/test', (req, res) => {
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { page = 1, limit = 10, search = '', status = '' } = req.query;
     
-    const query = search ? {
-      $or: [
+    let query = {};
+    
+    // Handle search
+    if (search) {
+      query.$or = [
         { 'personalInfo.firstName': { $regex: search, $options: 'i' } },
         { 'personalInfo.lastName': { $regex: search, $options: 'i' } },
         { patientId: { $regex: search, $options: 'i' } },
-        { 'personalInfo.phone': { $regex: search, $options: 'i' } }
-      ]
-    } : {};
+        { 'personalInfo.phone': { $regex: search, $options: 'i' } },
+        { 'personalInfo.email': { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Handle status filter
+    if (status) {
+      if (status === 'active') {
+        query.isActive = true;
+      } else if (status === 'inactive') {
+        query.isActive = false;
+      }
+      // If status is 'all' or anything else, don't add isActive filter
+    }
+
+    console.log('Query:', query); // Debug log
 
     const patients = await Patient.find(query)
       .populate('registeredBy', 'name email')
@@ -38,48 +53,13 @@ router.get('/', auth, async (req, res) => {
       success: true,
       patients,
       pagination: {
-        current: page,
+        current: parseInt(page),
         pages: Math.ceil(total / limit),
         total
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// @route   POST /api/patients
-// @desc    Create new patient
-// @access  Private
-router.post('/', auth, async (req, res) => {
-  try {
-    console.log('POST /api/patients called');
-    console.log('Request body:', req.body);
-    
-    const patientData = {
-      ...req.body,
-      registeredBy: req.user._id
-    };
-    
-    // Handle empty bloodType
-    if (patientData.medicalInfo && patientData.medicalInfo.bloodType === '') {
-      delete patientData.medicalInfo.bloodType;
-    }
-
-    console.log('Patient data to save:', patientData);
-
-    const patient = new Patient(patientData);
-    await patient.save();
-
-    console.log('Patient saved successfully');
-
-    res.status(201).json({
-      success: true,
-      message: 'Patient registered successfully',
-      patient
-    });
-  } catch (error) {
-    console.error('Patient creation error:', error);
+    console.error('Patients route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -102,10 +82,38 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/patients
+// @desc    Create new patient
+// @access  Private
+router.post('/', auth, async (req, res) => {
+  try {
+    const patientData = {
+      ...req.body,
+      registeredBy: req.user._id
+    };
+    
+    // Handle empty bloodType
+    if (patientData.medicalInfo && patientData.medicalInfo.bloodType === '') {
+      delete patientData.medicalInfo.bloodType;
+    }
+
+    const patient = new Patient(patientData);
+    await patient.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Patient registered successfully',
+      patient
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   PUT /api/patients/:id
 // @desc    Update patient
 // @access  Private
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     const patient = await Patient.findByIdAndUpdate(
       req.params.id,
@@ -130,7 +138,7 @@ router.put('/:id', async (req, res) => {
 // @route   DELETE /api/patients/:id
 // @desc    Delete patient (soft delete)
 // @access  Private
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const patient = await Patient.findByIdAndUpdate(
       req.params.id,

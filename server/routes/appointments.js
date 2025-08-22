@@ -4,6 +4,38 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// IMPORTANT: Specific routes MUST come BEFORE parameterized routes
+// Move '/today/all' route BEFORE '/:id' route
+
+// @route   GET /api/appointments/today/all
+// @desc    Get today's appointments
+// @access  Private
+router.get('/today/all', auth, async (req, res) => {
+  try {
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+    const appointments = await Appointment.find({
+      appointmentDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    })
+    .populate('patient', 'patientId personalInfo')
+    .populate('doctor', 'doctorId personalInfo professionalInfo')
+    .sort({ appointmentTime: 1 });
+
+    res.json({
+      success: true,
+      appointments,
+      count: appointments.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/appointments
 // @desc    Get all appointments
 // @access  Private
@@ -58,6 +90,7 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/appointments/:id
 // @desc    Get appointment by ID
 // @access  Private
+// IMPORTANT: This parameterized route comes AFTER specific routes
 router.get('/:id', auth, async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id)
@@ -151,35 +184,6 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({
       success: true,
       message: 'Appointment cancelled successfully'
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// @route   GET /api/appointments/today
-// @desc    Get today's appointments
-// @access  Private
-router.get('/today/all', auth, async (req, res) => {
-  try {
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-
-    const appointments = await Appointment.find({
-      appointmentDate: {
-        $gte: startOfDay,
-        $lte: endOfDay
-      }
-    })
-    .populate('patient', 'patientId personalInfo')
-    .populate('doctor', 'doctorId personalInfo professionalInfo')
-    .sort({ appointmentTime: 1 });
-
-    res.json({
-      success: true,
-      appointments,
-      count: appointments.length
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

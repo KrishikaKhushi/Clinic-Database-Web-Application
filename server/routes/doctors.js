@@ -4,6 +4,29 @@ const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// IMPORTANT: Specific routes MUST come BEFORE parameterized routes
+// Move '/:id/schedule' route BEFORE '/:id' route
+
+// @route   GET /api/doctors/:id/schedule
+// @desc    Get doctor's schedule
+// @access  Private
+router.get('/:id/schedule', auth, async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.params.id);
+    
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    res.json({
+      success: true,
+      schedule: doctor.schedule
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/doctors
 // @desc    Get all doctors
 // @access  Private
@@ -51,6 +74,7 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/doctors/:id
 // @desc    Get doctor by ID
 // @access  Private
+// IMPORTANT: This parameterized route comes AFTER specific routes
 router.get('/:id', auth, async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
@@ -134,26 +158,6 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({
       success: true,
       message: 'Doctor deactivated successfully'
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// @route   GET /api/doctors/:id/schedule
-// @desc    Get doctor's schedule
-// @access  Private
-router.get('/:id/schedule', auth, async (req, res) => {
-  try {
-    const doctor = await Doctor.findById(req.params.id);
-    
-    if (!doctor) {
-      return res.status(404).json({ message: 'Doctor not found' });
-    }
-
-    res.json({
-      success: true,
-      schedule: doctor.schedule
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

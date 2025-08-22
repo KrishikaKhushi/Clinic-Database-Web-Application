@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { 
   UserCheck, 
   Search, 
@@ -27,7 +28,18 @@ const Doctors = () => {
   const [viewingDoctor, setViewingDoctor] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   
+  const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
+
+  // Check if user came from dashboard with intent to add
+  useEffect(() => {
+    const fromDashboard = searchParams.get('action')
+    if (fromDashboard === 'add') {
+      setShowAddModal(true)
+      // Clean up URL params
+      setSearchParams({})
+    }
+  }, [searchParams, setSearchParams])
 
   // Fetch doctors with React Query
   const { 

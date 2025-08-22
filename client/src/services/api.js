@@ -1,11 +1,9 @@
 import axios from 'axios'
 
-// Environment variable handling for different build tools
+// Environment variable handling for Vite (no process.env in browser)
 const API_BASE_URL = 
-  process.env.REACT_APP_API_URL || 
-  process.env.VITE_API_URL || 
-  process.env.NEXT_PUBLIC_API_URL || 
-  'https://clinic-database-web-application.onrender.com/api'
+  import.meta.env.VITE_API_URL || 
+  'http://localhost:5000/api'  // Use local development server
 
 // Debug log to see what URL is being used
 console.log('🔗 API Base URL:', API_BASE_URL)
@@ -66,7 +64,45 @@ export const authAPI = {
     return api.post('/auth/login', credentials)
   },
   register: (userData) => api.post('/auth/register', userData),
-  getProfile: () => api.get('/auth/profile'),
+  getProfile: () => api.get('/auth/me'),
+}
+
+// Notifications API
+export const notificationsAPI = {
+  // Get all notifications
+  getAll: (params = {}) => api.get('/notifications', { params }),
+  
+  // Mark notification as read
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  
+  // Mark all notifications as read
+  markAllAsRead: () => api.put('/notifications/mark-all-read'),
+  
+  // Delete notification
+  delete: (id) => api.delete(`/notifications/${id}`),
+  
+  // Generate sample notifications (for testing)
+  generateSample: () => api.post('/notifications/generate-sample'),
+  
+  // Generate notifications from activities
+  generateFromActivities: () => api.post('/notifications/generate-from-activities'),
+}
+
+// Dashboard API
+export const dashboardAPI = {
+  // Get dashboard statistics
+  getStats: () => api.get('/dashboard/stats'),
+  
+  // Get recent activities
+  getRecentActivities: (limit = 10) => api.get('/dashboard/recent-activities', { 
+    params: { limit } 
+  }),
+  
+  // Get today's appointments
+  getTodaysAppointments: () => api.get('/dashboard/todays-appointments'),
+  
+  // Get summary metrics
+  getSummary: () => api.get('/dashboard/summary'),
 }
 
 // Patients API
@@ -91,6 +127,7 @@ export const patientsAPI = {
 export const doctorsAPI = {
   getAll: (params = {}) => api.get('/doctors', { params }),
   getById: (id) => api.get(`/doctors/${id}`),
+  getSchedule: (id) => api.get(`/doctors/${id}/schedule`),
   create: (data) => api.post('/doctors', data),
   update: (id, data) => api.put(`/doctors/${id}`, data),
   delete: (id) => api.delete(`/doctors/${id}`),
@@ -100,6 +137,7 @@ export const doctorsAPI = {
 export const appointmentsAPI = {
   getAll: (params = {}) => api.get('/appointments', { params }),
   getById: (id) => api.get(`/appointments/${id}`),
+  getTodaysAll: () => api.get('/appointments/today/all'),
   create: (data) => api.post('/appointments', data),
   update: (id, data) => api.put(`/appointments/${id}`, data),
   delete: (id) => api.delete(`/appointments/${id}`),
@@ -109,6 +147,7 @@ export const appointmentsAPI = {
 export const recordsAPI = {
   getAll: (params = {}) => api.get('/records', { params }),
   getById: (id) => api.get(`/records/${id}`),
+  getByPatient: (patientId) => api.get(`/records/patient/${patientId}`),
   create: (data) => api.post('/records', data),
   update: (id, data) => api.put(`/records/${id}`, data),
   delete: (id) => api.delete(`/records/${id}`),

@@ -76,27 +76,31 @@
   align-items: center;
 }
 
+/* Remove input icons - no longer needed */
 .input-icon {
-  position: absolute;
-  left: 12px;
-  color: #666;
-  z-index: 1;
+  display: none;
 }
 
 .input-wrapper input {
   width: 100%;
-  padding: 12px 12px 12px 45px;
+  padding: 12px 50px 12px 12px; /* Removed left padding for icons */
   border: 2px solid #e1e5e9;
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
   background-color: #fafafa;
+  box-sizing: border-box;
 }
 
 .input-wrapper input:focus {
   outline: none;
   border-color: #667eea;
   background-color: white;
+}
+
+.input-wrapper input::placeholder {
+  color: #999;
+  font-size: 0.95rem;
 }
 
 .password-toggle {
@@ -106,7 +110,7 @@
   border: none;
   cursor: pointer;
   color: #666;
-  padding: 0;
+  padding: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -186,5 +190,14 @@
   
   .login-header h1 {
     font-size: 1.75rem;
+  }
+  
+  .input-wrapper input {
+    padding: 12px 40px 12px 12px; /* No left padding for icons on mobile */
+    font-size: 0.95rem;
+  }
+  
+  .password-toggle {
+    right: 10px;
   }
 }
